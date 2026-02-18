@@ -2,126 +2,121 @@ import { useEffect, useState } from "react";
 
 function App() {
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-  // Form states
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [department, setDepartment] = useState("");
-  const [year, setYear] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    department: "",
+    year: "",
+    projectTitle: "",
+    technologies: ""
+  });
 
-  // Fetch students (GET)
-  const fetchStudents = () => {
-    fetch("http://localhost:5000/api/students")
-      .then((res) => res.json())
-      .then((data) => {
-        setStudents(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching students:", err);
-        setLoading(false);
-      });
+  // FETCH STUDENTS
+  const loadStudents = async () => {
+    const res = await fetch("http://localhost:5000/api/students");
+    const data = await res.json();
+    setStudents(data);
   };
 
   useEffect(() => {
-    fetchStudents();
+    loadStudents();
   }, []);
 
-  // Handle form submit (POST)
-  const handleSubmit = (e) => {
-    e.preventDefault(); // stop page refresh
+  // HANDLE INPUT
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-    const newStudent = {
-      name,
-      email,
-      department,
-      year
-    };
+  // ADD STUDENT
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    fetch("http://localhost:5000/api/students", {
+    await fetch("http://localhost:5000/api/students", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(newStudent)
-    })
-      .then((res) => res.json())
-      .then(() => {
-        // Clear form
-        setName("");
-        setEmail("");
-        setDepartment("");
-        setYear("");
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form)
+    });
 
-        // Refresh list
-        fetchStudents();
-      })
-      .catch((err) => console.error("Error adding student:", err));
+    setForm({
+      name: "",
+      email: "",
+      department: "",
+      year: "",
+      projectTitle: "",
+      technologies: ""
+    });
+
+    loadStudents();
+  };
+
+  // DELETE
+  const deleteStudent = async (id) => {
+    await fetch(`http://localhost:5000/api/students/${id}`, {
+      method: "DELETE"
+    });
+    loadStudents();
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Student Project System</h1>
+    <div style={{ padding: "30px", maxWidth: "800px", margin: "auto" }}>
+      <h1>Student Project Management</h1>
 
-      {/* Student Form */}
-      <h2>Add Student</h2>
+      {/* FORM */}
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        <input
-          type="text"
-          placeholder="Department"
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        <input
-          type="number"
-          placeholder="Year"
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          required
-        />
-        <br /><br />
-
-        <button type="submit">Add Student</button>
+        {["name", "email", "department", "year", "projectTitle", "technologies"].map(
+          (field) => (
+            <input
+              key={field}
+              name={field}
+              placeholder={field}
+              value={form[field]}
+              onChange={handleChange}
+              required
+              style={{ width: "100%", marginBottom: "10px", padding: "8px" }}
+            />
+          )
+        )}
+        <button>Add Student</button>
       </form>
 
       <hr />
 
-      {/* Student List */}
-      {loading ? (
-        <p>Loading students...</p>
-      ) : students.length === 0 ? (
-        <p>No students found</p>
-      ) : (
-        <ul>
-          {students.map((student) => (
-            <li key={student._id}>
-              {student.name} — {student.department} (Year {student.year})
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* SEARCH */}
+      <input
+        placeholder="Search by name"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: "100%", marginBottom: "20px" }}
+      />
+
+      {/* LIST */}
+      {students
+        .filter((s) =>
+          s.name.toLowerCase().includes(search.toLowerCase())
+        )
+        .map((s) => (
+          <div
+            key={s._id}
+            style={{
+              border: "1px solid #ccc",
+              padding: "15px",
+              marginBottom: "10px"
+            }}
+          >
+            <h3>{s.name}</h3>
+            <p>{s.email}</p>
+            <p>
+              {s.department} – Year {s.year}
+            </p>
+            <p>
+              <strong>{s.projectTitle}</strong>
+            </p>
+            <p>Tech: {s.technologies}</p>
+            <button onClick={() => deleteStudent(s._id)}>Delete</button>
+          </div>
+        ))}
     </div>
   );
 }

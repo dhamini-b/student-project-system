@@ -1,22 +1,16 @@
 const mongoose = require("mongoose");
 
-/*
-  Student Schema
-  This defines how a student document looks in MongoDB
-*/
 const studentSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
-      trim: true
+      required: true
     },
 
     email: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true
+      unique: true
     },
 
     department: {
@@ -29,14 +23,17 @@ const studentSchema = new mongoose.Schema(
       required: true
     },
 
-    createdAt: {
-      type: Date,
-      default: Date.now
+    projectTitle: {
+      type: String,
+      required: true
+    },
+
+    technologies: {
+      type: String,
+      required: true
     }
   },
-  {
-    collection: "students"
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Student", studentSchema);
